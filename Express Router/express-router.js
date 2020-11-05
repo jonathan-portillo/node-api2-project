@@ -67,7 +67,7 @@ router.post("/", (req, res) => {
           .status(400)
           .json({ message: "Please provide title and contents for the post" });
       } else {
-        res.status(201).json(post);
+        res.status(201).json(newPost);
       }
     })
     .catch((err) => {
@@ -80,10 +80,11 @@ router.post("/", (req, res) => {
 
 //add a comment to a post
 router.post("/:id/comments", (req, res) => {
-  const newComment = req.body;
-  const id = req.body.id;
+  const commentBody = req.body;
+  const id = req.params.id;
+  const newComment = { ...commentBody, post_id: id };
 
-  if (id !== req.params.id) {
+  if (!posts.findById(id)) {
     res
       .status(404)
       .json({ message: "The post with the specified ID does not exist" });
@@ -91,7 +92,7 @@ router.post("/:id/comments", (req, res) => {
     posts
       .insertComment(newComment)
       .then((post) => {
-        if (!newCommment.text) {
+        if (!commentBody) {
           res.status(400).json({ message: "Please provide text for comment" });
         } else {
           res.status(201).json(post);
@@ -124,6 +125,31 @@ router.delete("/:id", (req, res) => {
       console.log("Error router DELETE ", error);
       res.status(500).json({ message: "Error deleting the specified id post" });
     });
+});
+
+//update post
+router.put("/:id", (req, res) => {
+  const updatedPost = req.body;
+  posts
+    .update(req.params.id, updatedPost)
+    .then((post) => {
+      if (!updatedPost.title || !updatedPost.contents) {
+        res
+          .status(400)
+          .json({ message: "Please provide title and contetns for post" });
+      } else if (updatedPost) {
+        res
+          .status(200)
+          .json({ title: updatedPost.title, contents: updatedPost.contents });
+      } else {
+        res
+          .status(404)
+          .json({ message: "The post with the specified ID does not exist" });
+      }
+    })
+    .catch((err) =>
+      res.status(500).json({ message: "There was an error updating the post" })
+    );
 });
 
 module.exports = router;
